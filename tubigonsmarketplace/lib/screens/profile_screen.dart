@@ -1,14 +1,20 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../models/marketplace_item.dart';
 import '../widgets/marketplace_item_card.dart';
+import '../widgets/sign_up_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   final List<MarketplaceItem> myItems;
   final ValueChanged<int> onDeleteItem;
   final List<MarketplaceItem> cartItems;
   final ValueChanged<int> onRemoveCartItem;
-  final String accountName;
+  final String? accountName;
+  final Uint8List? profileImageBytes;
+  final bool isSignedUp;
+  final SignUpCallback onSignUp;
 
   const ProfileScreen({
     super.key,
@@ -17,6 +23,9 @@ class ProfileScreen extends StatefulWidget {
     required this.cartItems,
     required this.onRemoveCartItem,
     required this.accountName,
+    required this.profileImageBytes,
+    required this.isSignedUp,
+    required this.onSignUp,
   });
 
   @override
@@ -102,29 +111,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    color: Color(0xFF1F8F5F),
-                    size: 32,
-                  ),
+                  backgroundImage: widget.profileImageBytes == null
+                      ? null
+                      : MemoryImage(widget.profileImageBytes!),
+                  child: widget.profileImageBytes == null
+                      ? const Icon(
+                          Icons.person,
+                          color: Color(0xFF1F8F5F),
+                          size: 32,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Welcome to Tubigon! ${widget.accountName}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
+                      if (widget.isSignedUp)
+                        RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                            ),
+                            children: [
+                              const TextSpan(text: 'Welcome to Tubigon! '),
+                              TextSpan(
+                                text: widget.accountName!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        const Text(
+                          'Welcome to Tubigon!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 4),
                       const Text(
                         'Tubigon, Bohol',
@@ -133,6 +168,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           fontSize: 14,
                         ),
                       ),
+                      if (!widget.isSignedUp) ...[
+                        const SizedBox(height: 10),
+                        FilledButton.tonalIcon(
+                          onPressed: () =>
+                              showSignUpDialog(context, widget.onSignUp),
+                          style: FilledButton.styleFrom(
+                            foregroundColor: const Color(0xFF15583C),
+                            backgroundColor: Colors.white,
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                          icon: const Icon(Icons.person_add_alt_1, size: 18),
+                          label: const Text('Sign up'),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -32,6 +32,59 @@ class MarketplaceItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actionButtons = <Widget>[];
+
+    if (showAddToCart && onAddToCart != null) {
+      actionButtons.add(
+        FilledButton.icon(
+          onPressed: () {
+            final added = onAddToCart!(item);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  added
+                      ? 'Added to cart.'
+                      : 'This item is already in your cart.',
+                ),
+              ),
+            );
+          },
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF1F8F5F),
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          icon: const Icon(Icons.add_shopping_cart_rounded, size: 14),
+          label: const Text('Add to cart'),
+        ),
+      );
+    }
+
+    actionButtons.add(
+      OutlinedButton.icon(
+        onPressed: () => _openDetails(context),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFF15583C),
+          side: const BorderSide(color: Color(0xFF7EAA8C)),
+          minimumSize: const Size(0, 36),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        icon: const Icon(Icons.visibility_outlined, size: 14),
+        label: const Text('View'),
+      ),
+    );
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -41,7 +94,7 @@ class MarketplaceItemCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE3F0E7), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1F8F5F).withValues(alpha: 0.04),
+            color: const Color(0xFF1F8F5F).withOpacity(0.04),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -50,57 +103,12 @@ class MarketplaceItemCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 104,
-            child: Column(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: SizedBox(
-                    width: 104,
-                    height: 92,
-                    child: _buildItemImage(),
-                  ),
-                ),
-                if (showAddToCart && onAddToCart != null)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 32,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        final added = onAddToCart!(item);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              added
-                                  ? 'Added to cart.'
-                                  : 'This item is already in your cart.',
-                            ),
-                          ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        textStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_shopping_cart, size: 15),
-                      label: const Text('Add to cart'),
-                    ),
-                  ),
-                TextButton(
-                  onPressed: () => _openDetails(context),
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(0, 32),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('View'),
-                ),
-              ],
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 104,
+              height: 94,
+              child: _buildItemImage(),
             ),
           ),
           const SizedBox(width: 12),
@@ -130,7 +138,7 @@ class MarketplaceItemCard extends StatelessWidget {
                         tooltip: onRemoveFromCart != null
                             ? 'Remove from cart'
                             : 'Delete listing',
-                        color: const Color(0xFF1F8F5F),
+                        color: const Color(0xFFB42318),
                         constraints: const BoxConstraints(
                           minWidth: 32,
                           minHeight: 32,
@@ -140,14 +148,26 @@ class MarketplaceItemCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  item.location,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF5A7B6B),
-                    fontSize: 12,
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: Color(0xFF5A7B6B),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        item.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF5A7B6B),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 if (item.listingType != 'Trade') ...[
                   const SizedBox(height: 8),
@@ -163,6 +183,16 @@ class MarketplaceItemCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    children: actionButtons,
+                  ),
+                ),
               ],
             ),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/marketplace_item.dart';
 import '../widgets/marketplace_item_card.dart';
+import '../widgets/sign_up_dialog.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<MarketplaceItem> items;
@@ -10,7 +11,9 @@ class HomeScreen extends StatelessWidget {
   final Future<void> Function() onRetry;
   final bool Function(MarketplaceItem) onAddToCart;
   final VoidCallback onOpenProfile;
-  final ValueChanged<String> onSignUp;
+  final bool hasProfileNotification;
+  final bool isSignedUp;
+  final SignUpCallback onSignUp;
 
   const HomeScreen({
     super.key,
@@ -20,6 +23,8 @@ class HomeScreen extends StatelessWidget {
     required this.onRetry,
     required this.onAddToCart,
     required this.onOpenProfile,
+    required this.hasProfileNotification,
+    required this.isSignedUp,
     required this.onSignUp,
   });
 
@@ -217,18 +222,9 @@ class HomeScreen extends StatelessWidget {
   }
 
   void showSignUp(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => _SignUpDialog(
-        onSubmit: (name) {
-          onSignUp(name);
-          Navigator.of(dialogContext).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome to Tubigon, $name!')),
-          );
-        },
-      ),
-    );
+    if (!isSignedUp) {
+      showSignUpDialog(context, onSignUp);
+    }
   }
 
   @override
@@ -252,27 +248,37 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             const Expanded(
-              child: Text(
-                'Tubigon Market',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Tubigon Marketplace System',
+                  maxLines: 1,
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          OutlinedButton(
-            onPressed: () => showSignUp(context),
-            style: OutlinedButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              side: const BorderSide(color: Color(0xFFD6E8DC)),
+          if (!isSignedUp)
+            FilledButton(
+              onPressed: () => showSignUp(context),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                minimumSize: const Size(0, 36),
+              ),
+              child: const Text('Sign up'),
             ),
-            child: const Text('Sign up'),
-          ),
           IconButton(
             onPressed: onOpenProfile,
-            icon: const Icon(Icons.account_circle_outlined),
+            icon: Badge(
+              isLabelVisible: hasProfileNotification,
+              smallSize: 10,
+              backgroundColor: const Color(0xFFD92D20),
+              child: const Icon(Icons.account_circle_outlined),
+            ),
             tooltip: 'Profile',
           ),
           PopupMenuButton<_HomeMenuAction>(
@@ -281,8 +287,10 @@ class HomeScreen extends StatelessWidget {
               switch (action) {
                 case _HomeMenuAction.refresh:
                   onRetry();
+                  break;
                 case _HomeMenuAction.about:
                   showAbout(context);
+                  break;
               }
             },
             itemBuilder: (context) => const [
@@ -403,7 +411,7 @@ class _HomeHero extends StatelessWidget {
         color: const Color(0xFF15583C),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF174C36).withValues(alpha: 0.12),
+            color: const Color(0xFF174C36).withOpacity(0.12),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -531,12 +539,12 @@ class _ListingSection extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 190,
+            height: 220,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 4),
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) => SizedBox(
                 width: 320,
                 child: MarketplaceItemCard(
@@ -546,95 +554,6 @@ class _ListingSection extends StatelessWidget {
               ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _SignUpDialog extends StatefulWidget {
-  final ValueChanged<String> onSubmit;
-
-  const _SignUpDialog({required this.onSubmit});
-
-  @override
-  State<_SignUpDialog> createState() => _SignUpDialogState();
-}
-
-class _SignUpDialogState extends State<_SignUpDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Create your account'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Create a local account to personalize your marketplace profile.',
-                style: TextStyle(color: Color(0xFF64796D), height: 1.4),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter your name.'
-                    : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || !value.trim().contains('@')) {
-                    return 'Enter a valid email.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-                validator: (value) => value == null || value.length < 8
-                    ? 'Use at least 8 characters.'
-                    : null,
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              widget.onSubmit(_nameController.text.trim());
-            }
-          },
-          child: const Text('Sign up'),
-        ),
       ],
     );
   }

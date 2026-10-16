@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import 'models/marketplace_item.dart';
@@ -22,7 +24,7 @@ class TubigonMarketplaceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Tubigon Marketplace',
+      title: 'Tubigon Marketplace System',
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Roboto',
@@ -117,7 +119,9 @@ class MarketplaceMainPage extends StatefulWidget {
 
 class _MarketplaceMainPageState extends State<MarketplaceMainPage> {
   int selectedIndex = 0;
-  String accountName = 'Guest';
+  String? accountName;
+  Uint8List? profileImageBytes;
+  bool hasNewListingNotification = false;
 
   final ApiService apiService = ApiService();
 
@@ -163,6 +167,14 @@ class _MarketplaceMainPageState extends State<MarketplaceMainPage> {
   void addItem(MarketplaceItem item) {
     setState(() {
       myItems.insert(0, item);
+      hasNewListingNotification = true;
+    });
+  }
+
+  void openProfile() {
+    setState(() {
+      selectedIndex = 4;
+      hasNewListingNotification = false;
     });
   }
 
@@ -198,14 +210,13 @@ class _MarketplaceMainPageState extends State<MarketplaceMainPage> {
         errorMessage: errorMessage,
         onRetry: loadItems,
         onAddToCart: addToCart,
-        onOpenProfile: () {
-          setState(() {
-            selectedIndex = 4;
-          });
-        },
-        onSignUp: (name) {
+        hasProfileNotification: hasNewListingNotification,
+        isSignedUp: accountName != null,
+        onOpenProfile: openProfile,
+        onSignUp: (name, imageBytes) {
           setState(() {
             accountName = name;
+            profileImageBytes = imageBytes;
           });
         },
       ),
@@ -223,6 +234,14 @@ class _MarketplaceMainPageState extends State<MarketplaceMainPage> {
         cartItems: cartItems,
         onRemoveCartItem: removeFromCart,
         accountName: accountName,
+        profileImageBytes: profileImageBytes,
+        isSignedUp: accountName != null,
+        onSignUp: (name, imageBytes) {
+          setState(() {
+            accountName = name;
+            profileImageBytes = imageBytes;
+          });
+        },
       ),
     ];
 
@@ -233,9 +252,13 @@ class _MarketplaceMainPageState extends State<MarketplaceMainPage> {
       ),
       bottomNavigationBar: MarketplaceBottomNav(
         currentIndex: selectedIndex,
+        hasProfileNotification: hasNewListingNotification,
         onTap: (index) {
           setState(() {
             selectedIndex = index;
+            if (index == 4) {
+              hasNewListingNotification = false;
+            }
           });
         },
       ),
